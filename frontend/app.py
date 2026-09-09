@@ -63,13 +63,15 @@ if len(st.session_state["messages"]) <= 1:
 for msg in st.session_state["messages"]:
     render_message(msg)
 
+# Always render chat input
+user_input = st.chat_input(
+    "Ask about Prakhar's ML projects, LTV analytics, fraud detection, skills, or contact info...",
+    key="chat_input")
+
 # Check if there is a pending prompt from suggestion chip
-user_input = None
 if st.session_state["pending_prompt"]:
     user_input = st.session_state["pending_prompt"]
     st.session_state["pending_prompt"] = None
-else:
-    user_input = st.chat_input("Ask about Prakhar's ML projects, LTV analytics, fraud detection, skills, or contact info...")
 
 if user_input:
     # 1. Append User Message
