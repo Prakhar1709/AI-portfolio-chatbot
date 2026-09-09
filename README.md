@@ -1,144 +1,529 @@
 # 🤖 AI Chatbot Portfolio Engine
 
-An intelligent, production-grade AI portfolio chatbot built with **FastAPI**, **Streamlit**, **ChromaDB**, **Structure-Aware Markdown RAG**, and **Modular LLM Adapters** (Google Gemini, OpenAI, Groq, and Smart Offline fallback).
+An intelligent, production-grade AI portfolio chatbot built with **FastAPI**, **Streamlit**, **ChromaDB**, **Structure-Aware Markdown RAG**, and **Modular LLM Adapters**.
+
+The chatbot allows recruiters and visitors to interact with Prakhar's portfolio using natural language and receive context-aware answers with verified source citations.
 
 ---
 
-## 🏛️ Architecture Overview
+## 🌐 Live Demo
 
-The system strictly implements the design decisions specified in the architecture blueprint:
+### 🚀 Try the AI Portfolio Chatbot
 
-```
-                  +----------------------------------------------+
-                  |           KNOWLEDGE BASE (Markdown)          |
-                  |  profile.md  projects.md  experience.md ...  |
-                  +----------------------+-----------------------+
-                                         |
-                                         v
-                  +----------------------------------------------+
-                  |       STRUCTURE-AWARE RECURSIVE CHUNKER      |
-                  |  - Preserves H1/H2/H3 header breadcrumbs     |
-                  |  - Attaches category, tags & char metadata   |
-                  +----------------------+-----------------------+
-                                         |
-                                         v
-                  +----------------------------------------------+
-                  |         HOSTED / MODULAR EMBEDDINGS          |
-                  |   Gemini text-embedding-004 / OpenAI / Local |
-                  +----------------------+-----------------------+
-                                         |
-                                         v
-                  +----------------------------------------------+
-                  |            CHROMADB VECTOR STORE             |
-                  |   Persistent local storage with cosine dist  |
-                  +----------------------+-----------------------+
-                                         |
-                       +-----------------+-----------------+
-                       |                                   |
-                       v                                   v
-        +-----------------------------+     +-----------------------------+
-        |  SEMANTIC + METADATA SEARCH |     |       FASTAPI BACKEND       |
-        |  - Intent-guided filtering  |     |  - POST /api/chat           |
-        |  - Metadata score boosting  |     |  - POST /api/ingest         |
-        |  - Source citation tracking |     |  - GET  /api/health         |
-        +-----------------------------+     +--------------+--------------+
-                                                           |
-                                                           v
-                                            +-----------------------------+
-                                            |      STREAMLIT FRONTEND     |
-                                            |  - Glassmorphic Dark UI     |
-                                            |  - Dynamic Citation Inspector|
-                                            |  - Profile & Skills Widget  |
-                                            +-----------------------------+
+**[https://prakhar-ai-portfolio.streamlit.app](https://prakhar-ai-portfolio.streamlit.app)**
+
+Ask questions about:
+
+- Projects
+- Technical skills
+- Experience
+- Education
+- Tech stack
+- Data Science / ML work
+- GenAI projects
+- Contact information
+
+---
+
+## 🏗️ Architecture Overview
+
+```text
+                    ┌─────────────────────────────────────────┐
+                    │       KNOWLEDGE BASE (Markdown)         │
+                    │ profile.md | projects.md | skills.md   │
+                    │ experience.md | education.md | faq.md  │
+                    └───────────────────┬─────────────────────┘
+                                        │
+                                        ▼
+                    ┌─────────────────────────────────────────┐
+                    │   STRUCTURE-AWARE RECURSIVE CHUNKER     │
+                    │ • Preserves H1/H2/H3 breadcrumbs        │
+                    │ • Adds category, tags & metadata        │
+                    └───────────────────┬─────────────────────┘
+                                        │
+                                        ▼
+                    ┌─────────────────────────────────────────┐
+                    │          MODULAR EMBEDDINGS             │
+                    │       Local / Gemini / OpenAI           │
+                    └───────────────────┬─────────────────────┘
+                                        │
+                                        ▼
+                    ┌─────────────────────────────────────────┐
+                    │            CHROMADB VECTOR STORE        │
+                    │       Persistent vector storage         │
+                    └───────────────────┬─────────────────────┘
+                                        │
+                         ┌──────────────┴──────────────┐
+                         │                             │
+                         ▼                             ▼
+             ┌──────────────────────┐     ┌────────────────────────┐
+             │ SEMANTIC + METADATA  │     │    FASTAPI BACKEND     │
+             │      RETRIEVAL       │     │                        │
+             │ • Intent filtering   │     │ • /api/chat            │
+             │ • Metadata boosting  │     │ • /api/ingest          │
+             │ • Source tracking    │     │ • /api/health          │
+             └──────────┬───────────┘     └────────────┬───────────┘
+                        │                              │
+                        └──────────────┬───────────────┘
+                                       ▼
+                    ┌─────────────────────────────────────────┐
+                    │         STREAMLIT FRONTEND              │
+                    │ • Glassmorphic dark UI                 │
+                    │ • Chat interface                        │
+                    │ • Citation inspector                    │
+                    │ • Profile & skills sidebar              │
+                    │ • LLM provider selector                 │
+                    └─────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🚀 Key Features
 
-1. **Structured Section Markdown Knowledge**:
-   - Ingests markdown files from `data/knowledge/` (`profile.md`, `projects.md`, `experience.md`, `skills.md`, `education.md`, `faq.md`).
-2. **Structure-Aware Hierarchical Chunking**:
-   - Parses header trees, preserves context breadcrumbs (e.g. `Featured Projects > OmniRAG Enterprise > Architecture & Technical Highlights`), and attaches rich metadata.
-3. **ChromaDB Vector Store with Metadata Filtering**:
-   - Persistent vector storage with collection management and dynamic re-indexing.
-4. **Hybrid Semantic + Metadata Retrieval**:
-   - Detects user intent (e.g., project questions vs. skill questions vs. contact inquiries) and applies targeted metadata filters and ranking boosts.
-5. **Pluggable LLM Providers**:
-   - Supports **Google Gemini** (`gemini-1.5-flash`), **OpenAI** (`gpt-4o-mini`), **Groq** (`llama-3.3-70b-versatile`), and an intelligent **Smart Offline Persona Engine** that synthesizes structured answers without requiring an active API key.
-6. **State-of-the-Art Streamlit Interface**:
-   - Glassmorphic dark theme, instant suggestion chips, collapsible verified citations with relevance meters, and live model selector.
+### 1. Structured Markdown Knowledge Base
+
+Portfolio information is maintained as modular Markdown files inside:
+
+```text
+data/knowledge/
+```
+
+Files include:
+
+- `profile.md`
+- `projects.md`
+- `experience.md`
+- `skills.md`
+- `education.md`
+- `faq.md`
+
+### 2. Structure-Aware Hierarchical Chunking
+
+The RAG pipeline preserves Markdown heading hierarchy and creates contextual breadcrumbs such as:
+
+```text
+Featured Projects
+    >
+OmniRAG Enterprise
+    >
+Architecture & Technical Highlights
+```
+
+This improves retrieval accuracy and keeps each retrieved chunk connected to its original context.
+
+### 3. ChromaDB Vector Store
+
+Uses **ChromaDB** for persistent vector storage and semantic similarity search.
+
+The system supports:
+
+- Persistent collections
+- Dynamic re-indexing
+- Metadata filtering
+- Similarity-based retrieval
+
+### 4. Hybrid Retrieval
+
+The retrieval system combines:
+
+- Semantic similarity
+- Metadata filtering
+- Intent detection
+- Metadata-based ranking boosts
+- Source citation tracking
+
+This allows the chatbot to distinguish between questions about projects, skills, experience, education, and contact information.
+
+### 5. Modular LLM Providers
+
+The application supports multiple LLM providers:
+
+| Provider | Model |
+|---|---|
+| 🚀 Groq | `openai/gpt-oss-20b` |
+| ✨ Google Gemini | Configurable |
+| ⚡ OpenAI | Configurable |
+| 🛡️ Offline | Smart Offline Persona Engine |
+
+### 6. Modern Streamlit Interface
+
+The frontend includes:
+
+- Glassmorphic dark UI
+- Chat interface
+- Suggestion chips
+- Model/provider selector
+- Verified source citations
+- Citation relevance information
+- Profile and skills sidebar
+- Backend health status
 
 ---
 
-## 📦 Directory Structure
+## 🧰 Technology Stack
 
-```
+| Category | Technology |
+|---|---|
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Language | Python |
+| Vector Database | ChromaDB |
+| RAG | Structure-Aware Markdown RAG |
+| Embeddings | Local / Gemini / OpenAI |
+| LLM | Groq GPT-OSS 20B |
+| Validation | Pydantic |
+| API Server | Uvicorn |
+| Deployment | Streamlit Community Cloud + Render |
+
+---
+
+## 📦 Project Structure
+
+```text
 ai-portfolio-chatbot/
+│
 ├── data/
-│   ├── knowledge/              # Markdown portfolio knowledge files
-│   │   ├── profile.md          # Personal bio, summary, contact
-│   │   ├── projects.md         # Detailed showcase of featured projects
-│   │   ├── experience.md       # Work history, roles & metrics
-│   │   ├── skills.md           # Categorized technical competencies
-│   │   ├── education.md        # Education & certifications
-│   │   └── faq.md              # Common interview & recruiter questions
-│   └── chroma_db/              # Persistent ChromaDB vector store
+│   ├── knowledge/
+│   │   ├── profile.md
+│   │   ├── projects.md
+│   │   ├── experience.md
+│   │   ├── skills.md
+│   │   ├── education.md
+│   │   └── faq.md
+│   │
+│   └── chroma_db/
+│
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── main.py             # FastAPI REST endpoints
-│   │   ├── config.py           # Configuration & environment loader
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   │
 │   │   ├── models/
 │   │   │   ├── __init__.py
-│   │   │   └── schemas.py      # Pydantic models & validation
+│   │   │   └── schemas.py
+│   │   │
 │   │   ├── core/
 │   │   │   ├── __init__.py
-│   │   │   ├── chunker.py      # Structure-aware recursive markdown chunker
-│   │   │   ├── embeddings.py   # Modular embedding adapters
-│   │   │   ├── vector_store.py # ChromaDB manager
-│   │   │   ├── retriever.py    # Semantic + metadata retrieval engine
-│   │   │   ├── llm.py          # Modular LLM client adapters
-│   │   │   └── rag_pipeline.py # Persona prompt orchestration & citation builder
+│   │   │   ├── chunker.py
+│   │   │   ├── embeddings.py
+│   │   │   ├── vector_store.py
+│   │   │   ├── retriever.py
+│   │   │   ├── llm.py
+│   │   │   └── rag_pipeline.py
+│   │   │
 │   │   └── services/
 │   │       ├── __init__.py
-│   │       └── ingestion.py    # Auto-indexer for markdown documents
+│   │       └── ingestion.py
+│   │
 │   └── requirements.txt
+│
 ├── frontend/
-│   ├── app.py                  # Streamlit application entrypoint
+│   ├── app.py
+│   │
 │   ├── components/
-│   │   ├── chat_ui.py          # Chat bubbles, chips & citation inspector
-│   │   └── sidebar.py          # Profile hero, status & settings
+│   │   ├── chat_ui.py
+│   │   └── sidebar.py
+│   │
 │   ├── styles/
-│   │   └── custom.css          # Glassmorphic dark theme stylesheet
+│   │   └── custom.css
+│   │
 │   └── requirements.txt
+│
 ├── .env.example
-├── run_app.py                  # Single-command launcher
+├── run_app.py
 └── README.md
 ```
 
 ---
 
-## 🛠️ Quick Start
+## 🔌 API Endpoints
 
-### 1. Configure Environment (Optional)
-Copy `.env.example` to `.env` and configure your preferred provider:
-```bash
-cp .env.example .env
-```
-*(Note: If no API keys are provided, the app automatically runs in **Smart Offline Persona Mode** with deterministic embeddings and local inference!)*
+### Chat
 
-### 2. Run Both Services Together
-```bash
-python run_app.py
+```http
+POST /api/chat
 ```
-- **Streamlit Frontend**: [http://localhost:8501](http://localhost:8501)
-- **FastAPI Backend**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+Generates a context-aware portfolio response using retrieved knowledge and the selected LLM provider.
+
+### Ingest Knowledge Base
+
+```http
+POST /api/ingest
+```
+
+Re-indexes the Markdown knowledge base into ChromaDB.
+
+### Health Check
+
+```http
+GET /api/health
+```
+
+Returns backend health, active providers, and vector database information.
+
+### Sources
+
+```http
+GET /api/sources
+```
+
+Returns indexed portfolio knowledge sources.
+
+### Portfolio Summary
+
+```http
+GET /api/portfolio/summary
+```
+
+Returns a structured summary of the portfolio knowledge base.
 
 ---
 
-## ⚙️ Customizing Your Portfolio
-To personalize the knowledge base with your own background:
-1. Edit the markdown files inside `data/knowledge/` with your own projects, experience, and contact links.
-2. In the Streamlit sidebar, click **"🔄 Re-index Markdown Files"** or call `POST /api/ingest`.
-3. The chatbot will instantly reflect your updated background with verified citations!
+## 🛠️ Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Prakhar1709/AI-portfolio-chatbot.git
+cd AI-portfolio-chatbot
+```
+
+### 2. Create Virtual Environment
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+### 3. Install Backend Dependencies
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+### 4. Install Frontend Dependencies
+
+```bash
+pip install -r frontend/requirements.txt
+```
+
+### 5. Configure Environment
+
+Create a `.env` file using:
+
+```bash
+cp .env.example .env
+```
+
+Configure the required API keys for your selected LLM provider.
+
+### 6. Run the Application
+
+```bash
+python run_app.py
+```
+
+The application will be available at:
+
+```text
+Streamlit Frontend:
+http://localhost:8501
+
+FastAPI Backend:
+http://localhost:8000
+
+FastAPI Swagger Docs:
+http://localhost:8000/docs
+```
+
+---
+
+## 🧠 How the RAG Pipeline Works
+
+```text
+Markdown Knowledge Base
+          │
+          ▼
+Structure-Aware Chunking
+          │
+          ▼
+Embedding Generation
+          │
+          ▼
+ChromaDB Vector Store
+          │
+          ▼
+User Query
+          │
+          ▼
+Intent Detection
+          │
+          ▼
+Semantic + Metadata Retrieval
+          │
+          ▼
+Relevant Context
+          │
+          ▼
+LLM Generation
+          │
+          ▼
+Answer + Source Citations
+```
+
+The system retrieves the most relevant portfolio information before generating the final response.
+
+---
+
+## 📚 Updating the Portfolio Knowledge
+
+To update the chatbot's knowledge:
+
+1. Edit the Markdown files inside:
+
+```text
+data/knowledge/
+```
+
+2. Update information about:
+
+```text
+Projects
+Experience
+Skills
+Education
+Profile
+FAQs
+```
+
+3. Re-index the knowledge base using the Streamlit interface or:
+
+```http
+POST /api/ingest
+```
+
+The chatbot will then use the updated information in future responses.
+
+---
+
+## 💬 Example Questions
+
+Try asking the deployed chatbot:
+
+```text
+What are Prakhar's top skills?
+```
+
+```text
+What projects has Prakhar worked on?
+```
+
+```text
+Explain Prakhar's credit card fraud project.
+```
+
+```text
+What is Prakhar's tech stack?
+```
+
+```text
+Tell me about Prakhar's experience.
+```
+
+```text
+What machine learning projects has Prakhar built?
+```
+
+```text
+What GenAI technologies does Prakhar know?
+```
+
+---
+
+## ☁️ Deployment
+
+The application uses a split deployment architecture:
+
+```text
+                User
+                  │
+                  ▼
+       ┌─────────────────────┐
+       │ Streamlit Cloud     │
+       │ Frontend            │
+       └──────────┬──────────┘
+                  │
+                  ▼
+       ┌─────────────────────┐
+       │ Render              │
+       │ FastAPI Backend     │
+       └──────────┬──────────┘
+                  │
+                  ▼
+       ┌─────────────────────┐
+       │ Groq                │
+       │ GPT-OSS 20B         │
+       └─────────────────────┘
+```
+
+### Current Deployment
+
+- **Frontend:** Streamlit Community Cloud
+- **Backend:** Render
+- **LLM:** Groq `openai/gpt-oss-20b`
+- **Embeddings:** Local
+- **Vector Database:** ChromaDB
+
+### 🔗 Live Application
+
+**https://prakhar-ai-portfolio.streamlit.app**
+
+---
+
+## 🔐 Environment Variables
+
+API keys should never be committed to GitHub.
+
+Example:
+
+```env
+DEFAULT_LLM_PROVIDER=groq
+DEFAULT_EMBEDDING_PROVIDER=local
+GROQ_API_KEY=your_groq_api_key
+HOST=0.0.0.0
+```
+
+Keep sensitive credentials inside `.env` locally or environment variables on the deployment platform.
+
+---
+
+## 👨‍💻 Author
+
+### Prakhar Pratap Singh
+
+**AI/ML Developer | Data Science | GenAI**
+
+GitHub:
+
+**https://github.com/Prakhar1709**
+
+---
+
+## ⭐ Project
+
+If you find this project useful or interesting, consider giving the repository a ⭐.
+
+### 🔗 Repository
+
+**https://github.com/Prakhar1709/AI-portfolio-chatbot**
+
+### 🚀 Live Demo
+
+**https://prakhar-ai-portfolio.streamlit.app**

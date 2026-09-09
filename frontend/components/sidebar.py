@@ -50,10 +50,10 @@ def render_sidebar(api_base_url: str):
             format_func=lambda x: {
                 "gemini": "✨ Google Gemini (1.5 Flash)",
                 "openai": "⚡ OpenAI (GPT-4o Mini)",
-                "groq": "🚀 Groq (Llama-3.3 70B)",
+                "groq": "🚀 Groq (GPT-OSS 20B)",
                 "offline": "🛡️ Smart Offline Persona Engine"
             }.get(x, x),
-            index=0
+            index=2
         )
         st.session_state["selected_provider"] = provider
 

@@ -103,7 +103,7 @@ if user_input:
             }
 
             try:
-                res = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=25)
+                res = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=(5,60))
                 if res.status_code == 200:
                     data = res.json()
                     answer = data.get("answer", "No response generated.")
@@ -133,7 +133,7 @@ if user_input:
                     st.error(err_msg)
             except Exception as e:
                 # Direct in-process fallback if backend is not running standalone
-                st.warning(f"Could not reach FastAPI server at `{API_BASE_URL}`. Attempting internal fallback...")
+                st.warning(f"FastAPI request failed: {type(e).__name__}: {e}. Attempting internal fallback...")
                 try:
                     from backend.app.core.rag_pipeline import PortfolioRAGPipeline
                     from backend.app.models.schemas import ChatRequest, ChatMessage
